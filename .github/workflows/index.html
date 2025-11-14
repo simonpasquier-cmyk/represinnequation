@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Représentation d'Inéquations</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Inter", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f3f4f6;
+        }
+
+        .container {
+            background: white;
+            border-radius: 14px;
+            padding: 25px;
+            max-width: 900px;
+            margin: auto;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+            transition: 0.3s;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #1f2937;
+            font-size: 28px;
+        }
+
+        .inequation {
+            font-size: 28px;
+            text-align: center;
+            margin: 18px 0;
+            padding: 14px;
+            background: #eef2ff;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #4338ca;
+        }
+
+        .axis-container {
+            position: relative;
+            height: 160px;
+            margin: 30px 0;
+            width: 100%;
+            overflow: visible;
+        }
+
+        .axis {
+            position: absolute;
+            top: 60%;
+            width: 100%;
+            height: 3px;
+            background: #1f2937;
+            border-radius: 2px;
+        }
+
+        .tick {
+            position: absolute;
+            width: 2px;
+            height: 14px;
+            background: #1f2937;
+        }
+
+        .tick-label {
+            position: absolute;
+            top: 22px;
+            transform: translateX(-50%);
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .bracket {
+            position: absolute;
+            top: 15px;
+            width: 22px;
+            height: 50px;
+            cursor: grab;
+            transition: 0.15s;
+        }
+
+        .bracket:active {
+            cursor: grabbing;
+        }
+
+        .bracket-left {
+            border-left: 3px solid #6366f1;
+            border-top: 3px solid #6366f1;
+            border-bottom: 3px solid #6366f1;
+            border-radius: 6px 0 0 6px;
+        }
+
+        .bracket-right {
+            border-right: 3px solid #6366f1;
+            border-top: 3px solid #6366f1;
+            border-bottom: 3px solid #6366f1;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .bracket.open {
+            border-style: dashed;
+        }
+
+        .solution-area {
+            position: absolute;
+            top: 15px;
+            height: 50px;
+            background: rgba(99, 102, 241, 0.25);
+            border-radius: 6px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            background: #6366f1;
+            color: white;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #4f46e5;
+        }
+
+        button:disabled {
+            background: #c7d2fe;
+            cursor: not-allowed;
+        }
+
+        #qrBtn { display: none; }
+
+        @media (min-width: 1024px) {
+            #qrBtn {
+                display: block;
+                background: #7c3aed;
+            }
+        }
+
+        #qrModal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #qrModalContent {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            width: 260px;
+        }
+
+        #qrModal img {
+            width: 220px;
+            display: block;
+            margin: auto;
+        }
+
+        #closeModal {
+            margin-top: 15px;
+            background: #ef4444;
+        }
+
+        .bracket-type-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .bracket-type-btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            background: #e5e7eb;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .bracket-type-btn.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+
+        .feedback {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 26px;
+            font-size: 18px;
+        }
+
+        .correct { color: #16a34a; }
+        .incorrect { color: #dc2626; }
+
+        footer {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 14px;
+            opacity: 0.8;
+            padding-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Représentation d'Inéquations</h1>
+
+    <div class="inequation" id="currentInequation">x ≥ 3</div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="bracket-type-selector">
+        <div class="bracket-type-btn active" data-type="closed">Crochet fermé</div>
+        <div class="bracket-type-btn" data-type="open">Crochet ouvert</div>
+    </div>
+
+    <div class="axis-container" id="axisContainer">
+        <div class="axis"></div>
+        <div class="solution-area" id="solutionArea"></div>
+    </div>
+
+    <div class="controls">
+        <button id="validateBtn">Valider</button>
+        <button id="nextBtn" disabled>Suivant</button>
+        <button id="qrBtn">QR Code</button>
+    </div>
+
+    <div id="qrModal">
+        <div id="qrModalContent">
+            <img src="qr.png" alt="QR Code">
+            <button id="closeModal">Fermer</button>
+        </div>
+    </div>
+
+    <footer>
+        Développé par <b>Morgan Pyryt</b> & <b>Simon Pasquier - 2CIEL-A</b>
+    </footer>
+
+</div>
+
+<script>
+
+const config = {
+    minValue: -10,
+    maxValue: 10,
+    tickSpacing: 1,
+    axisWidth: 0
+};
+
+let currentInequation = null;
+let brackets = [];
+let bracketType = 'closed';
+let isDragging = false;
+let currentDraggedBracket = null;
+let offsetX = 0;
+
+const axisContainer = document.getElementById('axisContainer');
+const currentInequationElement = document.getElementById('currentInequation');
+const feedbackElement = document.getElementById('feedback');
+const validateBtn = document.getElementById('validateBtn');
+const nextBtn = document.getElementById('nextBtn');
+const solutionArea = document.getElementById('solutionArea');
+const bracketTypeBtns = document.querySelectorAll('.bracket-type-btn');
+
+function init() {
+    resizeAxis();
+    createAxis();
+    generateInequation();
+    setup();
+}
+
+window.addEventListener('resize', () => resizeAxis());
+
+function resizeAxis() {
+    config.axisWidth = axisContainer.clientWidth;
+}
+
+function createAxis() {
+    const tickCount = (config.maxValue - config.minValue) / config.tickSpacing + 1;
+
+    for (let i = 0; i < tickCount; i++) {
+        const value = config.minValue + i;
+        const pos = valueToPosition(value);
+
+        const tick = document.createElement('div');
+        tick.className = "tick";
+        tick.style.left = `${pos}px`;
+        axisContainer.appendChild(tick);
+
+        if (value % 5 === 0 || value === config.minValue || value === config.maxValue) {
+            const label = document.createElement('div');
+            label.className = "tick-label";
+            label.style.left = `${pos}px`;
+            label.textContent = value;
+            axisContainer.appendChild(label);
+        }
+    }
+}
+
+function valueToPosition(value) {
+    return ((value - config.minValue) / (config.maxValue - config.minValue)) * config.axisWidth;
+}
+
+function positionToValue(px) {
+    const ratio = px / config.axisWidth;
+    const val = config.minValue + ratio * (config.maxValue - config.minValue);
+    return Math.round(val);
+}
+
+function generateInequation() {
+    const ops = ['>','≥','<','≤'];
+    const operator = ops[Math.floor(Math.random()*ops.length)];
+    const value = Math.floor(Math.random() * 15) - 7;
+
+    currentInequation = { operator, value };
+    currentInequationElement.textContent = `x ${operator} ${value}`;
+
+    brackets.forEach(b => b.remove());
+    brackets = [];
+    solutionArea.style.display = "none";
+
+    createInitialBrackets();
+    feedbackElement.textContent = "";
+}
+
+function createInitialBrackets() {
+    createBracket('left', valueToPosition(config.minValue), 'open');
+    createBracket('right', valueToPosition(config.maxValue), 'open');
+    updateSolutionArea();
+}
+
+function createBracket(side, position, type) {
+    const el = document.createElement('div');
+    el.className = `bracket bracket-${side}`;
+    if (type == "open") el.classList.add('open');
+
+    el.dataset.side = side;
+    el.dataset.type = type;
+    el.style.left = `${position - 10}px`;
+
+    el.addEventListener('mousedown', startDrag);
+    el.addEventListener('touchstart', startDrag);
+
+    axisContainer.appendChild(el);
+    brackets.push(el);
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    isDragging = true;
+    currentDraggedBracket = e.target;
+
+    const rect = currentDraggedBracket.getBoundingClientRect();
+    offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move);
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchend', stopDrag);
+}
+
+function move(e) {
+    if (!isDragging) return;
+
+    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const rect = axisContainer.getBoundingClientRect();
+
+    let px = clientX - rect.left - offsetX + 10;
+    px = Math.max(0, Math.min(px, config.axisWidth));
+
+    const snapped = positionToValue(px);
+    currentDraggedBracket.style.left = `${valueToPosition(snapped) - 10}px`;
+
+    updateSolutionArea();
+}
+
+function stopDrag() {
+    isDragging = false;
+    currentDraggedBracket = null;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', stopDrag);
+}
+
+function updateSolutionArea() {
+    const left = brackets.find(b => b.dataset.side === "left");
+    const right = brackets.find(b => b.dataset.side === "right");
+
+    const leftPx = parseFloat(left.style.left) + 10;
+    const rightPx = parseFloat(right.style.left) + 10;
+
+    solutionArea.style.left = `${leftPx}px`;
+    solutionArea.style.width = `${rightPx - leftPx}px`;
+    solutionArea.style.display = "block";
+}
+
+function validate() {
+    const l = brackets.find(b => b.dataset.side === "left");
+    const r = brackets.find(b => b.dataset.side === "right");
+    const lv = positionToValue(parseFloat(l.style.left) + 10);
+    const rv = positionToValue(parseFloat(r.style.left) + 10);
+
+    const { operator, value } = currentInequation;
+
+    let ok = false;
+
+    if (operator === '>' && lv === value && rv === config.maxValue) ok = true;
+    if (operator === '≥' && lv === value && rv === config.maxValue) ok = true;
+    if (operator === '<' && rv === value && lv === config.minValue) ok = true;
+    if (operator === '≤' && rv === value && lv === config.minValue) ok = true;
+
+    if (ok) {
+        feedbackElement.textContent = "Correct 💪";
+        feedbackElement.className = "feedback correct";
+        nextBtn.disabled = false;
+    } else {
+        feedbackElement.textContent = "Incorrect, retente ✌️";
+        feedbackElement.className = "feedback incorrect";
+        nextBtn.disabled = true;
+    }
+}
+
+function setup() {
+    validateBtn.addEventListener('click', validate);
+    nextBtn.addEventListener('click', generateInequation);
+
+    bracketTypeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            bracketTypeBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            bracketType = btn.dataset.type;
+        });
+    });
+
+    document.getElementById("qrBtn").onclick = () => {
+        document.getElementById("qrModal").style.display = "flex";
+    };
+    document.getElementById("closeModal").onclick = () => {
+        document.getElementById("qrModal").style.display = "none";
+    };
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
